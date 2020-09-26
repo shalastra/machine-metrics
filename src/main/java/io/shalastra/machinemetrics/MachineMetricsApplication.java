@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import oshi.SystemInfo;
 import oshi.hardware.CentralProcessor;
 import oshi.hardware.HardwareAbstractionLayer;
+import oshi.hardware.Sensors;
 
 @Slf4j
 @SpringBootApplication
@@ -36,6 +37,11 @@ class SystemInfoService {
 		HardwareAbstractionLayer hal = systemInfo.getHardware();
 		CentralProcessor cpu = hal.getProcessor();
 
-		return cpu.toString();
+		Sensors sensors = hal.getSensors();
+
+		SensorsData sensorsData = new SensorsData(sensors.getCpuTemperature(), sensors.getCpuVoltage());
+		return sensorsData.toString();
 	}
 }
+
+record SensorsData(double cpuTemperature, double cpuVoltage) {}
