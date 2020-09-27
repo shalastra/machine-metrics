@@ -17,9 +17,9 @@ import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import oshi.SystemInfo;
-import oshi.hardware.CentralProcessor;
 import oshi.hardware.HardwareAbstractionLayer;
 import oshi.hardware.Sensors;
+import oshi.software.os.OperatingSystem;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +41,7 @@ public class MachineMetricsApplication implements CommandLineRunner {
 	}
 
 	@Override
-	public void run(String... args) throws Exception {
+	public void run(String... args) {
 		log.info(systemInfoService().collect());
 
 		kafkaTemplate.send("single-topic", systemInfoService().collect());
@@ -76,13 +76,13 @@ class KafkaProducerConfig {
 
 	@Bean
 	public ProducerFactory<String, String> producerFactory() {
-		Map<String, Object> configProps = new HashMap<>();
+		Map<String, Object> properties = new HashMap<>();
 
-		configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
-		configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-		configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+		properties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
+		properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+		properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
 
-		return new DefaultKafkaProducerFactory<>(configProps);
+		return new DefaultKafkaProducerFactory<>(properties);
 	}
 
 	@Bean
@@ -97,13 +97,38 @@ class SystemInfoService {
 		SystemInfo systemInfo = new SystemInfo();
 
 		HardwareAbstractionLayer hal = systemInfo.getHardware();
-		CentralProcessor cpu = hal.getProcessor();
+		OperatingSystem operatingSystem = systemInfo.getOperatingSystem();
 
 		Sensors sensors = hal.getSensors();
 
-		SensorsData sensorsData = new SensorsData(sensors.getCpuTemperature(), sensors.getCpuVoltage());
-		return sensorsData.toString();
+		long availableMemory = hal.getMemory().getAvailable();
+		long virtualMemoryInUse = hal.getMemory().getVirtualMemory().getVirtualInUse();
+
+		int processCount = operatingSystem.getProcessCount();
+		int threadCount = operatingSystem.getThreadCount();
+
+		SensorData sensorData = new SensorData(sensors.getCpuTemperature(), sensors.getCpuVoltage());
+		MemoryData memoryData = new MemoryData(availableMemory, virtualMemoryInUse);
+		ProcessData processData = new ProcessData(processCount);
+		ThreadData threadData = new ThreadData(threadCount);
+
+		Metrics metrics = new Metrics(memoryData, sensorData, processData, threadData);
+
+		return metrics.toString();
 	}
 }
 
-record SensorsData(double cpuTemperature, double cpuVoltage) {}
+record Metrics(MemoryData memoryData, SensorData sensorData, ProcessData processData, ThreadData threadData) {
+}
+
+record SensorData(double cpuTemperature, double cpuVoltage) {
+}
+
+record ProcessData(int processCount) {
+}
+
+record ThreadData(int threadCount) {
+}
+
+record MemoryData(long available, long virtualInUse) {
+}

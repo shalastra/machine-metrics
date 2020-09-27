@@ -30,7 +30,7 @@ jib {
 	}
 }
 
-// tasks.build.dependsOn tasks.jib
+tasks.build.dependsOn tasks.jib
 
 compileJava {
 	options.compilerArgs += ['--enable-preview']
