@@ -3,6 +3,7 @@ plugins {
 	id 'io.spring.dependency-management' version '1.0.10.RELEASE'
 	id 'java'
 	id "io.freefair.lombok" version "5.2.1"
+  	id 'com.google.cloud.tools.jib' version '2.5.0'
 }
 
 group = 'io.shalastra'
@@ -14,6 +15,22 @@ repositories {
 	maven { url 'https://repo.spring.io/milestone' }
 	maven { url 'https://repo.spring.io/snapshot' }
 }
+
+jib {
+	from {
+		image = 'openjdk:15-jdk'
+	}	
+	to {
+		image = 'shalastra/machine-metrics'
+		tags = ['latest']
+	}
+	container {
+		jvmFlags = ['--enable-preview']
+		mainClass = 'io.shalastra.machinemetrics'
+	}
+}
+
+// tasks.build.dependsOn tasks.jib
 
 compileJava {
 	options.compilerArgs += ['--enable-preview']
