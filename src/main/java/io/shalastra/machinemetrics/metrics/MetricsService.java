@@ -2,6 +2,7 @@ package io.shalastra.machinemetrics.metrics;
 
 import io.shalastra.machinemetrics.metrics.entity.*;
 import oshi.SystemInfo;
+import oshi.hardware.GlobalMemory;
 import oshi.hardware.HardwareAbstractionLayer;
 import oshi.hardware.Sensors;
 import oshi.software.os.OperatingSystem;
@@ -14,13 +15,13 @@ public class MetricsService {
         HardwareAbstractionLayer hal = systemInfo.getHardware();
         OperatingSystem operatingSystem = systemInfo.getOperatingSystem();
 
-        return new Metrics(collectMemoryMetrics(hal), collectSensorMetrics(hal.getSensors()),
+        return new Metrics(collectMemoryMetrics(hal.getMemory()), collectSensorMetrics(hal.getSensors()),
                 collectProcessMetrics(operatingSystem), collectThreadMetrics(operatingSystem));
     }
 
-    private MemoryData collectMemoryMetrics(HardwareAbstractionLayer hal) {
-        long availableMemory = hal.getMemory().getAvailable();
-        long virtualMemoryInUse = hal.getMemory().getVirtualMemory().getVirtualInUse();
+    private MemoryData collectMemoryMetrics(GlobalMemory memory) {
+        long availableMemory = memory.getAvailable();
+        long virtualMemoryInUse = memory.getVirtualMemory().getVirtualInUse();
 
         return new MemoryData(availableMemory, virtualMemoryInUse);
     }
